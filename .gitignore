@@ -1,3 +1,6 @@
+core/target/
+parser/target/
+
 #################
 ## Eclipse
 #################
@@ -6,7 +9,6 @@
 .project
 .metadata
 bin/
-target/
 tmp/
 natives/
 *.tmp
