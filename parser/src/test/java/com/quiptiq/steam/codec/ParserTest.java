@@ -5,9 +5,14 @@ import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.misc.Nullable;
+import org.antlr.v4.runtime.tree.ParseTreeListener;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.InOrder;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -51,7 +56,7 @@ public class ParserTest {
     @Test
     public void simpleKeyPair() throws IOException {
         prepareParser(asInputStream("\"Key\" \"Value\""));
-        parser.addErrorListener(errorListener);
+        parser.addErrorListener(noneExpectedErrorListener);
         KeyValuesParser.KeypairContext keypairContext = parser.keypair();
         List nodes = keypairContext.KVTOKEN();
         assertEquals("Number of tokens", 2, nodes.size());
@@ -62,7 +67,7 @@ public class ParserTest {
     @Test
     public void nestedKeyPair() throws IOException {
         prepareParser(asInputStream("\"Key\"\n{}"));
-        parser.addErrorListener(errorListener);
+        parser.addErrorListener(noneExpectedErrorListener);
         KeyValuesParser.KeypairContext keypairContext = parser.keypair();
         List nodes = keypairContext.KVTOKEN();
         assertEquals("Number of tokens", 1, nodes.size());
@@ -75,11 +80,65 @@ public class ParserTest {
     public void appManifest() throws IOException {
         File acfFile = loadResourceFile("/appmanifest.acf");
         prepareParser(new BufferedInputStream(new FileInputStream(acfFile)));
-        parser.addErrorListener(errorListener);
-        KeyValuesParser.KeyvaluesContext keyvaluesContext = parser.keyvalues();
+        parser.addErrorListener(noneExpectedErrorListener);
+
+        ParseTreeWalker walker = new ParseTreeWalker();
+        KeyValuesBaseListener testListener = mock(KeyValuesBaseListener.class);
+        InOrder inOrder = inOrder(testListener);
+        walker.walk(testListener, parser.keyvalues());
+
+        inOrder.verify(testListener).enterKeyvalues(any()); // top level
+        // initial comment is ignored
+        // first keypair - AppState
+        inOrder.verify(testListener).enterEntry(any());
+        // AppState
+        inOrder.verify(testListener).enterKeypair(argThat(new KeyMatcher("\"AppState\"")));
+        inOrder.verify(testListener).enterEntry(any()); // child entry
+        inOrder.verify(testListener).exitEntry(any());
+        inOrder.verify(testListener).exitKeypair(any()); // exit AppState
+        inOrder.verify(testListener).exitEntry(any()); // exit nested AppState
+
+        // UserConfig
+        inOrder.verify(testListener).enterEntry(any()); // third child entry, parent
+        inOrder.verify(testListener).enterKeypair(argThat(new KeyMatcher("\"UserConfig\"")));
+        // UserConfig children
+        inOrder.verify(testListener).enterEntry(any()); // nested child entry
+        inOrder.verify(testListener).exitKeypair(any());
+        inOrder.verify(testListener).exitEntry(any()); // exit nest
+
+        // MountedDepots
+        inOrder.verify(testListener).enterEntry(any()); // final child entry
+        inOrder.verify(testListener).enterKeypair(argThat(new KeyMatcher("\"MountedDepots\"")));
+        // MountedDepots children
+        inOrder.verify(testListener).enterEntry(any()); // first nested child entry
+        inOrder.verify(testListener).exitEntry(any());
+        inOrder.verify(testListener).enterEntry(any()); // second nested child entry
+        inOrder.verify(testListener).exitEntry(any());
+        inOrder.verify(testListener).exitKeypair(any()); // exit MountedDepots nesting
+        inOrder.verify(testListener).exitEntry(any()); // exit MountedDepots
     }
 
-    private ANTLRErrorListener errorListener = new ANTLRErrorListener() {
+    class KeyMatcher implements ArgumentMatcher<KeyValuesParser.KeypairContext> {
+        private final String key;
+
+        public KeyMatcher(String key) {
+            this.key = key;
+        }
+
+        @Override
+        public boolean matches(Object o) {
+            if (!(o instanceof KeyValuesParser.KeypairContext)) {
+                return false;
+            }
+            KeyValuesParser.KeypairContext keypairContext = (KeyValuesParser.KeypairContext) o;
+            List kvToken = keypairContext.KVTOKEN();
+            return kvToken.size() == 1 && key.equals(kvToken.get(0).toString());
+        }
+    }
+    /**
+     * Listener for errors that expects none
+     */
+    private ANTLRErrorListener noneExpectedErrorListener = new ANTLRErrorListener() {
         @Override
         public void syntaxError(@NotNull Recognizer<?, ?> recognizer, @Nullable Object o, int i, int i1, @NotNull String s, @Nullable RecognitionException e) {
             assertTrue("Unexpected syntax error", false);

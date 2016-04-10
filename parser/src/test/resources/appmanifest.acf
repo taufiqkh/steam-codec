@@ -1,33 +1,15 @@
+// Test
 "AppState"
 {
 	"appID"		"12345"
-	"universe"		"1"
-	"name"		"Test App"
-	"StateFlags"		"4"
-	"InstallDir"		"Test Dir"
-	"LastUpdated"		"145704321"
-	"UpdateResult"		"0"
-	"SizeOnDisk"		"5555555"
-	"buildid"		"32131241"
-	"LastOwner"		"46568188888747654"
-	"BytesToDownload"		"123123"
-	"BytesDownloaded"		"123123"
-	"AutoUpdateBehavior"		"0"
-	"AllowOtherDownloadsWhileRunning"		"0"
+	"escape"    "\""
 	"UserConfig"
 	{
 		"language"		"english"
-		"BetaKey"		""
 	}
 	"MountedDepots"
 	{
-		"123"		"1234567"
-		"456"		"4567890"
-	}
-	"InstallScripts"
-	{
-		"0"		"_CommonRedist\\vcredist\\2010\\installscript.vdf"
-		"1"		"_CommonRedist\\vcredist\\2012\\installscript.vdf"
-		"2"		"_CommonRedist\\vcredist\\2013\\installscript.vdf"
+		"firstDepot"		"1234567"
+		"secondDepot"		"4567890"
 	}
 }
