@@ -37,6 +37,7 @@ public class ParserTest {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
 
         parser = new KeyValuesParser(tokens);
+        parser.addErrorListener(noneExpectedErrorListener);
     }
 
 
@@ -56,7 +57,6 @@ public class ParserTest {
     @Test
     public void simpleKeyPair() throws IOException {
         prepareParser(asInputStream("\"Key\" \"Value\""));
-        parser.addErrorListener(noneExpectedErrorListener);
         KeyValuesParser.KeypairContext keypairContext = parser.keypair();
         List nodes = keypairContext.KVTOKEN();
         assertEquals("Number of tokens", 2, nodes.size());
@@ -64,10 +64,13 @@ public class ParserTest {
         assertEquals("Value", "\"Value\"", nodes.get(1).toString());
     }
 
+    /**
+     * Simple key/value pair can be extracted successfully
+     * @throws IOException
+     */
     @Test
     public void nestedKeyPair() throws IOException {
         prepareParser(asInputStream("\"Key\"\n{}"));
-        parser.addErrorListener(noneExpectedErrorListener);
         KeyValuesParser.KeypairContext keypairContext = parser.keypair();
         List nodes = keypairContext.KVTOKEN();
         assertEquals("Number of tokens", 1, nodes.size());
@@ -76,6 +79,26 @@ public class ParserTest {
         assertEquals("Number of tokens", 0, nodes.size());
     }
 
+    /**
+     * When retrieved as an entry, a key/value pair can be extracted.
+     * @throws IOException
+     */
+    @Test
+    public void entryKeyPair() throws IOException {
+        prepareParser(asInputStream("\"Key\" \"Value\""));
+        KeyValuesParser.EntryContext entryContext = parser.entry();
+        KeyValuesParser.KeypairContext keypairContext = entryContext.keypair();
+        List nodes = keypairContext.KVTOKEN();
+        assertEquals("Number of tokens", 2, nodes.size());
+        assertEquals("Key", "\"Key\"", nodes.get(0).toString());
+        assertEquals("Value", "\"Value\"", nodes.get(1).toString());
+    }
+
+    /**
+     * Simplified appmanifest file can be walked through, generating the
+     * expected entry/exit calls.
+     * @throws IOException
+     */
     @Test
     public void appManifest() throws IOException {
         File acfFile = loadResourceFile("/appmanifest.acf");
