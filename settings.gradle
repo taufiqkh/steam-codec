@@ -1,0 +1,5 @@
+rootProject.name = 'steam-codec'
+include ':codec-parser', ':codec-core'
+
+project(':codec-parser').projectDir = "$rootDir/codec-parser" as File
+project(':codec-core').projectDir = "$rootDir/codec-core" as File

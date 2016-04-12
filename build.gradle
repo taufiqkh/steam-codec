@@ -1,0 +1,38 @@
+description = 'Parsing library for a subset of well-formed steam key/value files'
+
+allprojects {
+    apply plugin: 'maven'
+
+    group = 'com.quiptiq.steam'
+    version = '0.1-SNAPSHOT'
+}
+
+subprojects {
+    apply plugin: 'java'
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+
+    dependencies {
+        testCompile 'junit:junit:4.12'
+        testCompile 'org.mockito:mockito-core:2.0.44-beta'
+    }
+}
+
+project(':codec-parser') {
+    apply plugin: 'antlr'
+    dependencies {
+        antlr "org.antlr:antlr4:4.5"
+        compile group: 'org.antlr', name: 'antlr4', version: '4.5'
+    }
+}
+
+project(':codec-core') {
+    dependencies {
+        compile project(':codec-parser')
+    }
+}

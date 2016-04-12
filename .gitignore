@@ -1,5 +1,6 @@
-core/target/
-parser/target/
+**/target/
+**/build/
+.gradle
 
 #################
 ## Eclipse
